@@ -1,0 +1,694 @@
+<style>
+  #containerGraph {
+    position: relative;
+
+    * {
+      font-family: "Open sans", sans-serif;
+    }
+  }
+
+  #cotacaoFundo {
+    height: 460px;
+  }
+
+  .wrapper-actions {
+    position: absolute;
+    display: flex;
+    z-index: 1;
+    gap: 0.55rem;
+    right: 1rem;
+    align-items: center;
+
+    @media (max-width: 928px) {
+      top: 45px;
+      width: 100%;
+      justify-content: center;
+      gap: 2rem;
+    }
+  }
+
+  .wrapper-custom-period {
+    display: none;
+    justify-content: end;
+    top: 65px;
+    right: 1rem;
+    position: absolute;
+    width: 100%;
+
+    font-weight: bold;
+    font-size: 12px;
+
+    @media (max-width: 1024px) {
+      right: 0;
+      top: 97px;
+      justify-content: center;
+
+      span {
+        display: none;
+      }
+    }
+
+    .bg-custom-period {
+      display: flex;
+      background-color: #fff;
+      gap: 0.55rem;
+      flex-wrap: wrap;
+      padding: 1rem;
+      box-shadow: 0px 3px 6px #cecece;
+      @media (min-width: 1024px) {
+        align-items: center;
+      }
+
+      @media (max-width: 1024px) {
+        flex-direction: column;
+      }
+    }
+    .close {
+      min-width: 100%;
+      text-align: end;
+      cursor: pointer;
+    }
+    input {
+      border: 1px solid #cecece;
+      border-radius: 2px;
+      padding-inline: 0.35rem;
+
+      @media (max-width: 1024px) {
+        height: 30px;
+      }
+    }
+
+    button {
+      background-color: #5f6b82;
+      border: none;
+      border-radius: 4px;
+      padding: 0.15rem 0.45rem;
+      color: #fff;
+      cursor: pointer;
+      flex: 1;
+      height: fit-content;
+      margin-top: 16px;
+    }
+  }
+
+  .wrapper-zoom-actions {
+    > div {
+      display: flex;
+      gap: 0.55rem;
+    }
+  }
+
+  .zoomsBtns,
+  .graphMove {
+    a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(157, 164, 181, 0.8);
+      border-radius: 8px;
+      cursor: pointer;
+      width: 25px;
+      height: 25px;
+      line-height: 25px;
+      text-align: center;
+      margin-top: 8px;
+
+      svg {
+        width: 15px;
+        height: auto;
+      }
+    }
+  }
+
+  .wrapper-select {
+    position: relative;
+    margin-right: 2rem;
+    margin-top: 10px;
+    max-width: 198px;
+
+    @media (max-width: 928px) {
+      margin-right: 0;
+      max-width: 170px;
+    }
+
+    select {
+      width: 198px;
+      height: 34px;
+      padding-left: 0.85rem;
+      padding-bottom: 0;
+      padding-top: 0;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      background: none;
+      border: 1px solid #cecece;
+      @media (max-width: 928px) {
+        width: 178px;
+      }
+    }
+
+    .arrow {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%) rotate(180deg);
+    }
+  }
+</style>
+
+<div id="containerGraph">
+  <div class="wrapper-actions">
+    <div id="select-trigger">
+      <div class="wrapper-select">
+        <select id="periodoSelect"></select>
+        <div class="arrow">
+          <svg
+            width="16"
+            height="8"
+            viewBox="0 0 16 8"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            class="ativo"
+          >
+            <path
+              d="M15.7174 0.258068C15.8062 0.335845 15.8774 0.431697 15.9261 0.539198C15.9749 0.6467 16 0.763369 16 0.881406C16 0.999443 15.9749 1.11613 15.9261 1.22363C15.8774 1.33114 15.8062 1.42697 15.7174 1.50474L8.89006 7.74081C8.77045 7.84698 8.62774 7.92378 8.47323 7.9651C8.31873 8.00641 8.15672 8.01112 8.00008 7.97883C7.84344 8.01112 7.68127 8.00641 7.52677 7.9651C7.37226 7.92378 7.22955 7.84698 7.10994 7.74081L0.282555 1.50475C0.193766 1.42697 0.122639 1.33114 0.0738939 1.22363C0.0251487 1.11613 3.41666e-07 0.999444 3.31347e-07 0.881407C3.21028e-07 0.76337 0.0251487 0.646702 0.0738938 0.5392C0.122639 0.431698 0.193766 0.335846 0.282555 0.258069C0.471022 0.0916385 0.713908 -0.000214194 0.965342 -0.000214216C1.21678 -0.000214238 1.4595 0.0916384 1.64797 0.258069L7.99927 6.05814L14.3514 0.258068C14.5387 0.0896884 14.7821 -0.00257481 15.034 -0.000601684C15.2861 -0.00261205 15.5299 0.089645 15.7174 0.258068Z"
+              fill="#061844"
+            ></path>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div class="wrapper-zoom-actions">
+      <div class="zoomsBtns">
+        <a
+          id="zoomOut"
+          onclick="aplicarZoomCotacao(0.5)"
+          elgraph="0"
+          class="zoomOut"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            fill="#000000"
+            version="1.1"
+            id="XMLID_200_"
+            viewBox="0 0 24 24"
+            enable-background="new 0 0 24 24"
+            xml:space="preserve"
+          >
+            <g id="zoom-out">
+              <rect x="5" y="9" width="10" height="2" />
+              <path
+                d="M10,20C4.5,20,0,15.5,0,10S4.6,0,10,0s10,4.5,10,10S15.5,20,10,20z M10,2c-4.5,0-8,3.5-8,8s3.5,8,8,8s8-3.5,8-8   S14.5,2,10,2z"
+              />
+              <polygon points="17.3,15.9 24,22.6 22.6,24 15.8,17.3  " />
+            </g>
+          </svg>
+        </a>
+        <a
+          id="zoomIn"
+          onclick="aplicarZoomCotacao(1.1)"
+          elgraph="0"
+          class="zoomIn"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="800px"
+            height="800px"
+            viewBox="0 0 16 16"
+            fill="#000000"
+            class="bi bi-zoom-in"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zM13 6.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z"
+            />
+            <path
+              d="M10.344 11.742c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1 6.538 6.538 0 0 1-1.398 1.4z"
+            />
+            <path
+              fill-rule="evenodd"
+              d="M6.5 3a.5.5 0 0 1 .5.5V6h2.5a.5.5 0 0 1 0 1H7v2.5a.5.5 0 0 1-1 0V7H3.5a.5.5 0 0 1 0-1H6V3.5a.5.5 0 0 1 .5-.5z"
+            />
+          </svg>
+        </a>
+      </div>
+      <div class="graphMove">
+        <a
+          id="moveLeft"
+          onclick="moverGraficoCotacaoFundao(-1)"
+          elgraph="0"
+          class="moveLeft"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+            <!--Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc -->
+            <path
+              d="M169.4 297.4C156.9 309.9 156.9 330.2 169.4 342.7L361.4 534.7C373.9 547.2 394.2 547.2 406.7 534.7C419.2 522.2 419.2 501.9 406.7 489.4L237.3 320L406.6 150.6C419.1 138.1 419.1 117.8 406.6 105.3C394.1 92.8 373.8 92.8 361.3 105.3L169.3 297.3z"
+            />
+          </svg>
+        </a>
+        <a
+          id="moveRight"
+          onclick="moverGraficoCotacaoFundao(1)"
+          elgraph="0"
+          class="moveRight"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+            <!--Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc -->
+            <path
+              d="M471.1 297.4C483.6 309.9 483.6 330.2 471.1 342.7L279.1 534.7C266.6 547.2 246.3 547.2 233.8 534.7C221.3 522.2 221.3 501.9 233.8 489.4L403.2 320L233.9 150.6C221.4 138.1 221.4 117.8 233.9 105.3C246.4 92.8 266.7 92.8 279.2 105.3L471.2 297.3z"
+            />
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="wrapper-custom-period">
+    <div class="bg-custom-period">
+      <div class="close">X</div>
+      <div class="input-group">
+        De <input type="date" id="customDe" name="de" />
+      </div>
+      <span> - </span>
+      <div class="input-group">
+        Até <input type="date" id="customAte" name="ate" />
+      </div>
+      <button id="aplicarCustom" type="button">Aplicar</button>
+    </div>
+  </div>
+
+  <canvas id="cotacaoFundo"></canvas>
+</div>
+
+<script src="https:cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2"></script>
+
+<script defer>
+  async function carregarCotacaoFundo() {
+    // 🔹 Pega o código do fundo na página OU no final da URL
+    let codigoDoSpan = "";
+    let codigoDaUrl = "";
+
+    const spanFundo = document.querySelector("#codigo-do-fundo span");
+    if (spanFundo) {
+      codigoDoSpan = spanFundo.textContent.trim().toUpperCase();
+    }
+
+    const path = window.location.pathname;
+    const partes = path.split("/").filter(Boolean);
+    const ultimoSegmento = partes[partes.length - 1];
+    if (ultimoSegmento) {
+      codigoDaUrl = ultimoSegmento.trim().toUpperCase();
+    }
+
+    const codigoFundo = codigoDaUrl || codigoDoSpan;
+
+    if (!codigoFundo) {
+      console.error(
+        "Elemento #codigo-do-fundo span não encontrado e URL não contém código de fundo."
+      );
+      return;
+    }
+
+    const urlRequestCotacaoFundo = `https://rbrasset.s3.us-east-1.amazonaws.com/cotacao/${codigoFundo}.json`;
+
+    console.log("📊 Carregando cotações do fundo:", codigoFundo);
+
+    var marginLegenda = window.innerWidth > 1024 ? 31 : 70;
+
+    const legendMargin = {
+      id: "legendMargin",
+      beforeInit(chart, legend, options) {
+        const fitValue = chart.legend.fit;
+        chart.legend.fit = function fit() {
+          fitValue.bind(chart.legend)();
+          return (this.height += marginLegenda);
+        };
+      },
+    };
+
+    try {
+      const response = await fetch(urlRequestCotacaoFundo);
+      if (!response.ok) {
+        throw new Error(`Erro ao buscar dados do fundo: ${response.status}`);
+      }
+
+      let data = await response.json();
+
+      // 🔹 Detecta se está na versão EN
+      const isEnglish = window.location.pathname.includes("/en");
+
+      // 🔹 Se estiver em EN, troca vírgulas por pontos e vice-versa
+      if (isEnglish) {
+        data = data.map((item) => {
+          const formatValue = (valor) => {
+            if (typeof valor !== "string") return valor;
+            // primeiro substitui ponto temporariamente por marcador
+            return valor
+              .replace(/\./g, "#") // troca ponto por marcador
+              .replace(/,/g, ".") // troca vírgula por ponto
+              .replace(/#/g, ","); // marcador vira vírgula
+          };
+
+          return {
+            ...item,
+            cota_fechamento_dia: formatValue(item.cota_fechamento_dia),
+            cota_patrimonial_dia: formatValue(item.cota_patrimonial_dia),
+          };
+        });
+      }
+
+      // 🔹 Ordena por data (de mais antiga pra mais recente)
+      data.sort((a, b) => {
+        const [da, ma, ya] = a.data_referencia.split("/").map(Number);
+        const [db, mb, yb] = b.data_referencia.split("/").map(Number);
+        return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
+      });
+
+      // 🔹 Calcula meses de diferença entre primeira e última data
+      const [d1, m1, y1] = data[0].data_referencia.split("/").map(Number);
+      const [d2, m2, y2] = data[data.length - 1].data_referencia
+        .split("/")
+        .map(Number);
+
+      const dataInicio = new Date(y1, m1 - 1, d1);
+      const dataFim = new Date(y2, m2 - 1, d2);
+
+      const diffMeses =
+        (dataFim.getFullYear() - dataInicio.getFullYear()) * 12 +
+        (dataFim.getMonth() - dataInicio.getMonth());
+
+      // 🔹 Monta opções do select (inclui "Esse ano" para fallback)
+      const periodos = [
+        { value: "tudo", label: "Desde o início" },
+        { value: "1", label: "1 Mês", min: 1 },
+        { value: "6", label: "6 Meses", min: 6 },
+        { value: "12", label: "12 Meses", min: 12 },
+        { value: "5A", label: "5 Anos", min: 60 },
+        { value: "personalizar", label: "Personalizar" },
+      ];
+
+      const select = document.getElementById("periodoSelect");
+      if (!select) throw new Error("Elemento #periodoSelect não encontrado.");
+      select.innerHTML = "";
+
+      periodos.forEach((p) => {
+        if (
+          p.value === "tudo" ||
+          p.value === "personalizar" ||
+          diffMeses >= (p.min || 0)
+        ) {
+          const opt = document.createElement("option");
+          opt.value = p.value;
+          opt.textContent = p.label;
+          select.appendChild(opt);
+        }
+      });
+
+      const wrapperCustom = document.querySelector(".wrapper-custom-period");
+      const inputDe = wrapperCustom
+        ? wrapperCustom.querySelector('input[name="de"]') ||
+          wrapperCustom.querySelector("#customDe")
+        : null;
+      const inputAte = wrapperCustom
+        ? wrapperCustom.querySelector('input[name="ate"]') ||
+          wrapperCustom.querySelector("#customAte")
+        : null;
+
+      let btnAplicar = wrapperCustom
+        ? wrapperCustom.querySelector("#aplicarCustom") ||
+          wrapperCustom.querySelector('button[type="button"]')
+        : null;
+      if (wrapperCustom && !btnAplicar) {
+        btnAplicar = document.createElement("button");
+        btnAplicar.type = "button";
+        btnAplicar.id = "aplicarCustom";
+        btnAplicar.textContent = "Aplicar";
+        btnAplicar.style.marginLeft = "0.5rem";
+        wrapperCustom.appendChild(btnAplicar);
+      }
+
+      const closeWrapperCustom = wrapperCustom.querySelector(".close");
+
+      if (wrapperCustom) wrapperCustom.style.display = "none";
+
+      function atualizarGrafico(periodo, customRange) {
+        let dadosFiltrados = data;
+
+        if (periodo === "personalizar") {
+          if (!customRange || !customRange.de || !customRange.ate) return;
+          const de = customRange.de;
+          const ate = customRange.ate;
+          dadosFiltrados = data.filter((item) => {
+            const [d, m, y] = item.data_referencia.split("/").map(Number);
+            const dt = new Date(y, m - 1, d);
+            return dt >= de && dt <= ate;
+          });
+        } else if (periodo === "tudo") {
+          dadosFiltrados = data;
+        } else if (periodo === "5A") {
+          const limite = new Date(dataFim);
+          limite.setFullYear(limite.getFullYear() - 5);
+          dadosFiltrados = data.filter((item) => {
+            const [d, m, y] = item.data_referencia.split("/").map(Number);
+            return new Date(y, m - 1, d) >= limite;
+          });
+        } else {
+          const meses = parseInt(periodo, 10);
+          if (!isNaN(meses) && meses > 0) {
+            const limite = new Date(dataFim);
+            limite.setMonth(limite.getMonth() - meses);
+            dadosFiltrados = data.filter((item) => {
+              const [d, m, y] = item.data_referencia.split("/").map(Number);
+              return new Date(y, m - 1, d) >= limite;
+            });
+          } else {
+            dadosFiltrados = data;
+          }
+        }
+
+        const labels = dadosFiltrados.map((i) => i.data_referencia);
+        const dataGraficoCota = dadosFiltrados.map((i) =>
+          parseFloat(i.cota_fechamento_dia)
+        );
+        const dataGraficoCotaPatrimonial = dadosFiltrados.map((i) =>
+          parseFloat(i.cota_patrimonial_dia)
+        );
+
+        let minY = 0;
+        let maxY = 1;
+        if (dataGraficoCota.length) {
+          minY = Math.min(...dataGraficoCota);
+          maxY = Math.max(...dataGraficoCota) + 5;
+        }
+
+        const ctx = document.getElementById("cotacaoFundo").getContext("2d");
+
+        if (window.cotacaoFundo instanceof Chart) {
+          window.cotacaoFundo.destroy();
+        }
+
+        window.cotacaoFundo = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [
+              {
+                label: "Cota mercado",
+                backgroundColor: "rgb(45,103,91)",
+                borderColor: "rgb(57,115,103)",
+                borderWidth: 2,
+                data: dataGraficoCota,
+                fill: false,
+                tension: 0.1,
+              },
+              {
+                label: "Cota patrimonial",
+                backgroundColor: "rgb(0,12,56)",
+                borderColor: "rgb(6,24,68)",
+                borderWidth: 2,
+                data: dataGraficoCotaPatrimonial,
+                fill: false,
+                tension: 0.1,
+              },
+            ],
+          },
+          options: {
+            layout: {
+              padding: { top: 20 },
+            },
+            plugins: {
+              legend: {
+                display: true,
+                align: "center",
+                position: "top",
+              },
+              zoom: {
+                pan: {
+                  enabled: true,
+                  mode: "x", // pan horizontal
+                  threshold: 5, // evita pan acidental
+                },
+                zoom: {
+                  wheel: { enabled: false }, // desativa zoom por scroll
+                  pinch: { enabled: true }, // zoom por pinça no mobile
+                  mode: "x", // zoom apenas no eixo X
+                },
+                limits: {
+                  x: { minRange: 3 }, // mínimo de pontos visíveis
+                },
+              },
+            },
+            maintainAspectRatio: false,
+            pointRadius: 0,
+            hitRadius: 5,
+            scales: {
+              x: { display: true, ticks: { font: { size: 11 } } },
+              y: {
+                suggestedMin: minY,
+                suggestedMax: maxY,
+                title: {
+                  display: window.innerWidth >= 768, // opcional: mostra label apenas no desktop
+                  text: "Retorno (%)",
+                },
+              },
+            },
+          },
+          plugins: [legendMargin],
+        });
+
+        if(window.innerWidth < 768) {
+          const totalLabels = window.cotacaoFundo.data.labels.length;
+          if (window.cotacaoFundo.zoomScale) {
+            const visibleRange = 4; // número de pontos visíveis
+            const totalLabels = window.cotacaoFundo.data.labels.length;
+            window.cotacaoFundo.zoomScale("x", {
+              min: totalLabels - visibleRange,
+              max: totalLabels - 1,
+            });
+          }
+        }
+      }
+
+      select.addEventListener("change", (e) => {
+        const val = e.target.value;
+        if (val === "personalizar") {
+          if (wrapperCustom) wrapperCustom.style.display = "flex";
+          return;
+        } else {
+          if (wrapperCustom) wrapperCustom.style.display = "none";
+          atualizarGrafico(val);
+        }
+      });
+      closeWrapperCustom.addEventListener("click", () => {
+        wrapperCustom.style.display = "none";
+      });
+
+      if (btnAplicar) {
+        btnAplicar.addEventListener("click", () => {
+          if (!inputDe || !inputAte) return;
+          const deVal = inputDe.value;
+          const ateVal = inputAte.value;
+          if (!deVal || !ateVal) {
+            alert("Preencha as duas datas (DE e ATÉ).");
+            return;
+          }
+          const de = new Date(deVal);
+          const ate = new Date(ateVal);
+          if (isNaN(de) || isNaN(ate) || de > ate) {
+            alert("Período inválido. Verifique as datas.");
+            return;
+          }
+          atualizarGrafico("personalizar", { de, ate });
+          if (wrapperCustom) wrapperCustom.style.display = "none";
+        });
+      }
+
+      if (diffMeses >= 12) {
+        select.value = "12";
+        atualizarGrafico("12");
+      } else {
+        const anoAtual = new Date().getFullYear();
+        const temAnoAtual = data.some((item) => {
+          const [, , y] = item.data_referencia.split("/").map(Number);
+          return y === anoAtual;
+        });
+        if (temAnoAtual) {
+          select.value = "anoAtual";
+          atualizarGrafico("anoAtual");
+        } else {
+          select.value = "tudo";
+          atualizarGrafico("tudo");
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao carregar gráfico cotacaoFundo:", error);
+    }
+  }
+
+  const aplicarZoomCotacao = (fator) => {
+    if (!window.cotacaoFundo) return;
+    const chart = window.cotacaoFundo;
+    const totalLabels = chart.data.labels.length;
+    const minIndex = chart._zoomMinIndex || 0;
+    const maxIndex = chart._zoomMaxIndex || totalLabels - 1;
+    const range = maxIndex - minIndex;
+
+    let novoRange = Math.round(range / fator);
+    if (novoRange < 5) novoRange = 5;
+    if (novoRange > totalLabels - 1) novoRange = totalLabels - 1;
+
+    const centro = Math.round((minIndex + maxIndex) / 2);
+    let novoMin = centro - Math.floor(novoRange / 2);
+    let novoMax = centro + Math.floor(novoRange / 2);
+
+    if (novoMin < 0) {
+      novoMax += -novoMin;
+      novoMin = 0;
+    }
+    if (novoMax > totalLabels - 1) {
+      novoMin -= novoMax - (totalLabels - 1);
+      novoMax = totalLabels - 1;
+    }
+
+    chart._zoomMinIndex = novoMin;
+    chart._zoomMaxIndex = novoMax;
+    chart.options.scales.x.min = novoMin;
+    chart.options.scales.x.max = novoMax;
+    chart.update();
+  };
+
+  const moverGraficoCotacaoFundao = (direcao) => {
+    if (!window.cotacaoFundo) return;
+
+    const chart = window.cotacaoFundo;
+    const totalLabels = chart.data.labels.length;
+
+    let minIndex = chart._zoomMinIndex ?? 0;
+    let maxIndex = chart._zoomMaxIndex ?? totalLabels - 1;
+    const range = maxIndex - minIndex;
+
+    const desloc = Math.max(1, Math.round(range * 0.1)) * direcao;
+
+    let novoMin = minIndex + desloc;
+    let novoMax = maxIndex + desloc;
+
+    if (novoMin < 0) {
+      novoMax += -novoMin;
+      novoMin = 0;
+    }
+    if (novoMax > totalLabels - 1) {
+      novoMin -= novoMax - (totalLabels - 1);
+      novoMax = totalLabels - 1;
+    }
+
+    chart._zoomMinIndex = novoMin;
+    chart._zoomMaxIndex = novoMax;
+    chart.options.scales.x.min = novoMin;
+    chart.options.scales.x.max = novoMax;
+    chart.update();
+  };
+
+  document.addEventListener("DOMContentLoaded", carregarCotacaoFundo);
+</script>

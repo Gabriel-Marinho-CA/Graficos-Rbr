@@ -1,0 +1,305 @@
+
+    <style>
+      .performance-container {
+        display: flex;
+        overflow: hidden;
+        background: #fff;
+        margin-inline: auto;
+        max-width: 1150px;
+        overflow: auto;
+
+        * {
+          font-family: "Open Sans", sans-serif;
+          color: #1a2c4c;
+        }
+
+        .cell {
+          padding: 5px;
+        }
+
+        .col-metricas {
+          flex: 0 0 250px;
+          border-right: 1px solid #ddd;
+
+          @media (max-width: 1024px) {
+            flex: 1;
+          }
+          .header {
+            font-weight: bold;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            font-size: clamp(13px, 1.6vw, 17px);
+          }
+
+          .cell {
+            border-bottom: 1px solid #eee;
+            font-size: clamp(12px, 1.5vw, 15px);
+            white-space: nowrap;
+            padding-right: 10px;
+          }
+        }
+        .col-meses {
+          display: flex;
+          overflow-x: auto;
+          background: #fff;
+          min-width: 130px;
+
+          .mes {
+            min-width: 120px;
+            border-right: 1px solid #eee;
+            text-align: right;
+
+            .header {
+              font-weight: bold;
+              padding: 10px;
+              border-bottom: 1px solid #ddd;
+              text-align: center;
+              position: sticky;
+              top: 0;
+              z-index: 3;
+              font-size: clamp(13px, 1.6vw, 17px);
+            }
+          }
+          .cell {
+            border-bottom: 1px solid #eee;
+            font-size: clamp(12px, 1.5vw, 15px);
+            text-align: center;
+          }
+        }
+        .wrapper-elements-fixos {
+          flex: 1;
+          border-left: 1px solid #ddd;
+          background: #fff;
+          background-color: #f5f5f5;
+          min-width: fit-content;
+          display: flex;
+          box-shadow: -4px 0 8px -4px rgba(0, 0, 0, 0.1);
+
+          > div {
+            text-align: center;
+            border-right: 1px solid #ddd;
+          }
+          .cell {
+            border-bottom: 1px solid #ddd;
+            font-size: clamp(12px, 1.5vw, 15px);
+          }
+
+          .header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            font-size: clamp(13px, 1.6vw, 17px);
+          }
+        }
+        .col-metricas {
+          box-shadow: 4px 0 8px -4px rgba(0, 0, 0, 0.1);
+        }
+      }
+    </style>
+
+
+    <div class="performance-container">
+      <!-- Coluna fixa: Métricas -->
+      <div class="col-metricas">
+        <div class="header">Métricas</div>
+        <div class="cell">Dividendos (R$)</div>
+        <div class="cell">Dividend Yield (% cota mercado)</div>
+        <div class="cell">Dividend Yield (% cota patrimonial)</div>
+        <div class="cell">Retorno Patrimonial (%)</div>
+        <div class="cell">Retorno Patrimonial + Dividendos (%)</div>
+        <div class="cell">Retorno Mercado (%)</div>
+        <div class="cell">Retorno Mercado + Dividendos (%)</div>
+        <div class="cell">IFIX (%)</div>
+        <div class="cell">CDI (%)</div>
+      </div>
+
+      <!-- Coluna rolável: Meses -->
+      <div class="col-meses" id="col-meses"></div>
+
+      <!-- Coluna fixa da direita -->
+      <div class="wrapper-elements-fixos">
+        <div class="col-ytd">
+          <div class="header">YTD</div>
+        </div>
+        <div class="col-12M">
+          <div class="header">12M</div>
+        </div>
+        <div class="col-desde-inicio">
+          <div id="desde-inicio-span" class="header">Desde inicio</div>
+        </div>
+      </div>
+    </div>
+    <script>
+      async function getData() {
+        let codigoDoSpan = "";
+        let codigoDaUrl = "";
+
+        const spanFundo = document.querySelector("#codigo-do-fundo span");
+        if (spanFundo) {
+          codigoDoSpan = spanFundo.textContent.trim().toUpperCase();
+        }
+
+        const path = window.location.pathname;
+        const partes = path.split("/").filter(Boolean);
+        const ultimoSegmento = partes[partes.length - 1];
+        if (ultimoSegmento) {
+          codigoDaUrl = ultimoSegmento.trim().toUpperCase();
+        }
+
+        const codigoFundo = codigoDaUrl || codigoDoSpan;
+
+        if (!codigoFundo) {
+          console.error(
+            "Elemento #codigo-do-fundo span não encontrado e URL não contém código de fundo."
+          );
+          return;
+        }
+
+        // CORREÇÃO: A URL precisa estar entre crases (`) ou aspas (")
+        const urlRequestPerformance = ` https://rbrasset.s3.us-east-1.amazonaws.com/graphics/performance/${codigoFundo}.json`;
+
+
+        try {
+          const response = await fetch(urlRequestPerformance);
+          const dados = await response.json();
+
+
+          handleDataElements(dados);
+          changeFormat();
+        } catch (e) {
+          console.error("Erro ao processar performance historica:", e);
+        }
+      }
+
+      function handleDataElements(dados) {
+        const mesesContainer = document.getElementById("col-meses");
+        const fixaLinhas = document.querySelector(".wrapper-elements-fixos");
+
+        // limpa conteúdos antigos
+        mesesContainer.innerHTML = "";
+        if (fixaLinhas) {
+          fixaLinhas
+            .querySelectorAll(".col-ytd, .col-12M, .col-desde-inicio")
+            .forEach((col) => {
+              Array.from(col.children).forEach((child) => {
+                if (!child.classList.contains("header")) child.remove();
+              });
+            });
+        }
+
+        const metrics = [
+          { key: "dividendo", label: "Dividendos" },
+          { key: "dy_mercado", label: "DY Mercado" },
+          { key: "dy_patrimonial", label: "DY Patrimonial" },
+          { key: "retorno_patrimonial", label: "Retorno Patrimonial" },
+          { key: "retorno_patrimonial_div", label: "Ret. Patrimonial + Div" },
+          { key: "retorno_mercado", label: "Retorno Mercado" },
+          { key: "retorno_mercado_div", label: "Ret. Mercado + Div" },
+          { key: "ifix", label: "IFIX" },
+          { key: "cdi", label: "CDI" },
+        ];
+
+        // índices dos fixos (últimos 3)
+        const idxYTD = dados.colunas.length - 3;
+        const idx12M = dados.colunas.length - 2;
+        const idxDesde = dados.colunas.length - 1;
+
+        // === Monta colunas mensais ===
+        dados.colunas.forEach((coluna, i) => {
+          // pula os fixos (últimas 3 colunas)
+          if (i >= idxYTD) return;
+
+          const col = document.createElement("div");
+          col.className = "mes";
+
+          let html = `<div class="header">${coluna}</div>`;
+          metrics.forEach((m) => {
+            const valor = dados[m.key][i] ?? "-";
+            html += `<div class="cell">${valor}</div>`;
+          });
+
+          col.innerHTML = html;
+          mesesContainer.appendChild(col);
+        });
+
+        // === Popula colunas fixas ===
+        const colYTD = fixaLinhas.querySelector(".col-ytd");
+        const col12M = fixaLinhas.querySelector(".col-12M");
+        const colDesde = fixaLinhas.querySelector(".col-desde-inicio");
+
+        let anoAtual = 2024; // padrão inicial
+
+        function atualizarColunaYTD(ano) {
+          if (!colYTD) return;
+          const header = colYTD.querySelector(".header");
+          if (header) header.textContent = `YTD (${ano})`;
+
+          // limpa células antigas
+          Array.from(colYTD.children).forEach((c) => {
+            if (!c.classList.contains("header")) c.remove();
+          });
+
+          // preenche novamente (usando índice do YTD fixo)
+          metrics.forEach((m) => {
+            const valY = dados[m.key][idxYTD] ?? "-";
+            colYTD.innerHTML += `<div class="cell">${valY}</div>`;
+          });
+        }
+
+        // preenche colunas fixas (inicial)
+        metrics.forEach((m) => {
+          const val12 = dados[m.key][idx12M] ?? "-";
+          const valD = dados[m.key][idxDesde] ?? "-";
+          col12M.innerHTML += `<div class="cell">${val12}</div>`;
+          colDesde.innerHTML += `<div class="cell">${valD}</div>`;
+        });
+
+        atualizarColunaYTD(anoAtual);
+
+        // === OBSERVER: detecta mês visível e muda YTD dinamicamente ===
+        const mesesDivs = mesesContainer.querySelectorAll(".mes");
+        const observer = new IntersectionObserver(
+          (entries) => {
+            const visiveis = entries.filter((e) => e.isIntersecting);
+            if (visiveis.length > 0) {
+              const ultima = visiveis
+                .sort((a, b) => a.target.offsetLeft - b.target.offsetLeft)
+                .pop();
+              const mesTexto = ultima.target
+                .querySelector(".header")
+                .textContent.trim();
+              const ano = mesTexto.split("/")[1];
+              const anoFull = ano.length === 2 ? `20${ano}` : ano;
+
+              if (anoFull !== anoAtual) {
+                anoAtual = anoFull;
+                atualizarColunaYTD(anoAtual);
+              }
+            }
+          },
+          { root: mesesContainer, threshold: 0.5 }
+        );
+
+        mesesDivs.forEach((m) => observer.observe(m));
+      }
+
+      function changeFormat() {
+        const isEnglish = window.location.pathname.includes("/en");
+        if (isEnglish) {
+          document
+            .querySelectorAll(".col-meses .cell, .wrapper-elements-fixos .cell")
+            .forEach((el) => (el.innerHTML = el.innerHTML.replace(".", ",")));
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", getData);
+    </script>
+
