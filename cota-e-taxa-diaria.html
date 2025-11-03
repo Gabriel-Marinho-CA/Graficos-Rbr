@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <!-- <link rel="stylesheet" href="a.css" /> -->
+  </head>
+
+  <style>
+    .todoCalculadora {
+      padding: 48px 40px 24px 40px;
+      box-shadow: 2px 2px 0px #8e8e8e29;
+      border: 1px solid #d5d5d5;
+
+      @media (max-width: 768px) {
+        padding-inline: 1rem;
+      }
+
+      * {
+        font-family: "Open sans", sans-serif;
+      }
+
+      .SliderTodo {
+        position: relative;
+
+        .slidecontainer {
+          width: 100%;
+
+          .slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 1;
+            -webkit-transition: 0.2s;
+            transition: opacity 0.2s;
+            border-radius: 40px;
+
+            &:hover {
+              opacity: 0.9;
+            }
+            &::-webkit-slider-thumb {
+              -webkit-appearance: none;
+              appearance: none;
+              width: 16px;
+              height: 16px;
+              background: #041130;
+              cursor: pointer;
+              border-radius: 50%;
+              border: solid 3px white;
+              box-shadow: 1px 1px 3px 3px #cfcfcf;
+            }
+          }
+        }
+        .graducacao {
+          position: absolute;
+          display: flex;
+          width: 100%;
+          justify-content: space-between;
+          top: 11px;
+          z-index: -1;
+
+          div {
+            width: 2px;
+            height: 32px;
+            background: #cdcdcd;
+            position: relative;
+
+            &:nth-of-type(1) {
+              position: relative;
+              left: 8px;
+              span {
+                margin-right: -26.5px;
+                  @media (max-width: 1024px) {
+                    
+                  }
+              }
+            }
+            &:nth-of-type(7) {
+              position: relative;
+              right: 8px;
+            }
+            > span {
+              position: absolute;
+              top: 32px;
+              color: #818181;
+              font-size: 16px;
+              line-height: 24px;
+              right: 100%;
+              margin-right: -24.5px;
+
+              @media (min-width:1024px) {
+                width: max-content;
+              }
+
+              @media (max-width: 1024px) {
+                margin-right: -14.5px !important;
+                span {
+                  display: flex;
+                }
+                font-size: 12px;
+                line-height: 1;
+                text-align: center;
+              }
+            }
+          }
+        }
+      }
+      .containerCalculadora {
+        margin-top: 80px;
+
+        .valorIndice {
+          display: flex;
+          justify-content: center;
+          gap: 3rem;
+
+          @media (max-width: 768px) {
+            gap: 1rem;
+            justify-content: space-between;
+          }
+
+          @media (max-width: 400px) {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+          }
+
+          .inputCalculadores {
+            border: 1px solid #cecece;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding-left: 0.4rem;
+            width: 113px;
+
+            @media (max-width: 768px) {
+              width: 100%;
+              max-width: 92px;
+              height: 30px;
+            }
+          }
+          p {
+            color: #061844;
+            font-size: 16px;
+            line-height: 24px;
+            margin: 0;
+
+            @media (max-width: 768px) {
+              font-size: 12px;
+              line-height: 1;
+              min-height: 24px;
+            }
+          }
+          input {
+            height: 100%;
+            width: 100%;
+            border: none;
+            box-sizing: border-box;
+            outline: none;
+            color: #061844;
+            font-size: 22px;
+            font-weight: 600;
+
+            @media (max-width: 768px) {
+              font-size: 16px;
+            }
+          }
+
+          span {
+            color: #061844;
+            font-size: 22px;
+            line-height: 34px;
+            margin-top: 4px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            height: 48px;
+
+            @media (max-width: 768px) {
+              font-size: 16px;
+              line-height: 1;
+              height: 30px;
+            }
+          }
+        }
+      }
+    }
+  </style>
+  <body>
+    <div id="container-cota-e-taxa-diaria">
+      <p style="display: none">
+        Cota Patri <span id="cota-patrimonial">163,46</span>
+        <br />
+        UltimoDividendo <span id="ultimo-dividendo-fundo">1,000000</span>
+        <br />
+      </p>
+      <div class="todoCalculadora">
+        <div class="SliderTodo">
+          <div class="slidecontainer">
+            <input
+              type="range"
+              min="114.6"
+              max="174.6"
+              value="144.6"
+              class="slider"
+              id="myRange"
+              step="0.01"
+            />
+          </div>
+          <div class="graducacao">
+            <div>
+              <span>R$114,6</span>
+            </div>
+            <div>
+              <span>R$124,6</span>
+            </div>
+            <div>
+              <span>R$134,6</span>
+            </div>
+            <div>
+              <span>R$144,6</span>
+            </div>
+            <div>
+              <span>R$154,6</span>
+            </div>
+            <div>
+              <span>R$164,6</span>
+            </div>
+            <div>
+              <span>R$174,6</span>
+            </div>
+          </div>
+        </div>
+        <div class="containerCalculadora">
+          <div class="valorIndice">
+            <div class="tdValorCota itemCalc">
+              <p>Valor da Cota:</p>
+              <span class="inputCalculadores"
+                >R$
+                <input
+                  type="text"
+                  id="ValorCota"
+                  onkeyup="criaMascaraRange(this,'###.##');"
+                />
+              </span>
+            </div>
+            <div class="tdValorIndice itemCalc">
+              <p>Valor Patrimonial:</p>
+              <span id="ValorCotadia"> R$ 163,46</span>
+            </div>
+            <div class="tdValorIndice itemCalc">
+              <p>Ágio/Deságio:</p>
+              <span><span id="ValorAgio">0,59</span> %</span>
+            </div>
+            <div class="tdValorIndice itemCalc">
+              <p>Dividend Yield Anualizado:</p>
+              <span><span id="ValorDivi">7,30</span> %</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", async function () {
+        let data;
+
+        try {
+          // ===========================
+          // USO REAL DA API (DESCOMENTAR)
+          // ===========================
+          // const url = "./slider-data.json";
+          // const response = await fetch(url);
+          // data = await response.json();
+          //
+          // if (!data || !data.equity_share || !data.market_share || !data.dividend_12y_sum) {
+          //     throw new Error('Dados incompletos recebidos');
+          // }
+
+          // ===========================
+          // DADOS SIMULADOS / DEFAULT
+          // ===========================
+          data = {
+            equity_share: 9.85,
+            market_share: 8.66,
+            dividend_12y_sum: 1.135,
+            gauge_values: [5.66, 6.66, 7.66, 8.66, 9.66, 10.66, 11.66],
+            reference_date: "2025-09-11",
+          };
+
+          // Inicializa interface
+          atualizarValoresPrincipais(data);
+          aplicarGraduacoes(data.gauge_values);
+        } catch (e) {
+          console.error("Erro ao processar dados do fundo:", e);
+          mostrarErroUsuario();
+        }
+
+        // ===========================
+        // FUNÇÕES AUXILIARES
+        // ===========================
+
+        function atualizarValoresPrincipais(data) {
+          const slider = document.getElementById("myRange");
+          const inputCota = document.getElementById("ValorCota");
+          const spanPatrimonial = document.getElementById("ValorCotadia");
+          const valorPatrimonial = parseFloat(data.equity_share);
+          const dividendosAno = parseFloat(data.dividend_12y_sum);
+          const gauge = data.gauge_values.map((n) => parseFloat(n));
+
+          // Slider
+          slider.min = Math.min(...gauge);
+          slider.max = Math.max(...gauge);
+          const valorInicial = gauge[Math.floor(gauge.length / 2)]; // valor do meio
+          slider.value = valorInicial;
+
+          // Input da cota
+          inputCota.value = formatDisplay(valorInicial);
+
+          // Valor Patrimonial e último dividendo
+          spanPatrimonial.innerText = `R$ ${formatDisplay(valorPatrimonial)}`;
+          document.getElementById("cota-patrimonial").innerText =
+            formatDisplay(valorPatrimonial);
+          document.getElementById("ultimo-dividendo-fundo").innerText =
+            dividendosAno.toFixed(6).replace(".", ",");
+
+          // Cálculos iniciais
+          atualizarCalculos(valorInicial);
+
+          // === Eventos ===
+          slider.addEventListener("input", function () {
+            const v = parseFloat(this.value);
+            inputCota.value = formatDisplay(v);
+            atualizarCalculos(v);
+          });
+
+          inputCota.addEventListener("input", function () {
+            const raw = this.value.replace(",", ".");
+            let num = parseFloat(raw);
+            if (!isFinite(num)) return;
+            num = Math.min(
+              Math.max(num, parseFloat(slider.min)),
+              parseFloat(slider.max)
+            );
+            slider.value = num;
+            this.value = formatDisplay(num);
+            atualizarCalculos(num);
+          });
+
+          inputCota.addEventListener("blur", function () {
+            const raw = this.value.replace(",", ".");
+            const num = parseFloat(raw);
+            if (!isFinite(num))
+              this.value = formatDisplay(parseFloat(slider.value));
+          });
+        }
+
+        function aplicarGraduacoes(values) {
+          const gradContainer = document.querySelector(".graducacao");
+          if (!gradContainer) return;
+          gradContainer.innerHTML = "";
+          values.forEach((v) => {
+            const div = document.createElement("div");
+            const span = document.createElement("span");
+            span.innerText = `R$ ${formatDisplay(v)}`;
+            div.appendChild(span);
+            gradContainer.appendChild(div);
+          });
+        }
+
+        function atualizarCalculos(valorCotaNum) {
+          const valorPatrimonial = parseFloat(
+            document
+              .getElementById("cota-patrimonial")
+              .textContent.replace(",", ".")
+          );
+          const dividendosAno = parseFloat(
+            document
+              .getElementById("ultimo-dividendo-fundo")
+              .textContent.replace(",", ".")
+          );
+          const spanAgio = document.getElementById("ValorAgio");
+          const spanDivi = document.getElementById("ValorDivi");
+
+          const isEnglish = window.location.pathname.includes("/en");
+
+          if (!isFinite(valorCotaNum) || valorCotaNum <= 0) {
+            spanAgio.innerText = "--";
+            spanDivi.innerText = "--";
+            return;
+          }
+
+          // Ágio/Deságio (negativo se cota < patrimonial)
+          let agio = (valorCotaNum / valorPatrimonial - 1) * 100;
+          agio = parseFloat(agio.toFixed(2));
+
+          // Dividend Yield anualizado
+          let dy = (dividendosAno / valorCotaNum) * 100;
+          dy = parseFloat(dy.toFixed(2));
+
+          if(isEnglish) {
+            spanAgio.innerText = agio.toFixed(2).replace('.',',');
+            spanDivi.innerText = dy.toFixed(2).replace('.',',');
+          } else {
+            spanAgio.innerText = agio.toFixed(2);
+            spanDivi.innerText = dy.toFixed(2);
+          }
+
+         
+
+          // cor dinâmica
+        }
+
+        function formatDisplay(num) {
+          const isEnglish = window.location.pathname.includes("/en");
+
+          if (!isFinite(num)) return "--";
+          return isEnglish ? num.toFixed(2).replace(",", ".") : num.toFixed(2).replace(".", ",") 
+        }
+
+        function mostrarErroUsuario() {
+          const erroElement = document.createElement("div");
+          erroElement.className = "erro-mensagem";
+          erroElement.textContent =
+            "Ocorreu um erro ao carregar os dados. Por favor, tente novamente.";
+          document.body.appendChild(erroElement);
+          setTimeout(() => erroElement.remove(), 5000);
+        }
+      });
+    </script>
+  </body>
+</html>
