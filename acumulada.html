@@ -13,6 +13,16 @@
         color: #0094d9;
       }
     }
+    .elementor-element .rentabilidade  {
+      @media (max-width: 767px) {
+        padding-bottom: 1rem !important;
+      }
+    }
+    #graficoResultados-acumulada {
+      @media (max-width: 767px) {
+        height: 280px !important;
+      }
+    }
   }
 </style>
 <div id="containerGraph-acumulada">
@@ -22,445 +32,465 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2"></script>
 <script>
-  /**
-   * 2. Função para criar o gráfico.
-   * Ela recebe um array de dados e usa esse array para montar o gráfico.
-   */
-  function criarGraficoAcumuladas(data) {
-    if (!data || data.length === 0) {
-      console.error("Não há dados para criar o gráfico.");
-      return;
-    }
-
-    // 🔹 Extrair labels (meses)
-    // CORREÇÃO: Mapeamos o array 'data' principal, item por item.
-    const labels = data.map((item) => {
-      const [ano, mes] = item.mes.split("-");
-      const dataObj = new Date(ano, mes - 1);
-
-      // --- MÉTODO NOVO E ROBUSTO (Correção) ---
-      // Usamos formatToParts para pegar as partes da data (mês, ano)
-      // de forma segura, independentemente do formato (ex: "dez. de 24" ou "dez. 24")
-      const parts = new Intl.DateTimeFormat("pt-BR", {
-        month: "short",
-        year: "2-digit",
-      }).formatToParts(dataObj);
-
-      // Encontramos os valores específicos de mês e ano
-      // O '?' é opcional, mas garante que não quebre se 'find' falhar
-      const mesValor = parts.find((p) => p.type === "month")?.value;
-      const anoValor = parts.find((p) => p.type === "year")?.value;
-
-      // Juntamos manualmente no formato "mes/ano"
-      return `${mesValor.replace(".", "")}/${anoValor}`;
-      // --- FIM DO MÉTODO NOVO ---
-    });
-
-    // 🔹 Montar datasets dinamicamente
-    // CORREÇÃO: Mapeamos o array 'data' principal para cada série.
-    // CORREÇÃO 2: Multiplicamos os retornos por 100 para normalizar a escala.
-    const datasets = [
-      {
-        label: "Retorno Cota Mercado + Div",
-        // Pega o 'retorno_cota_mercado_div' de cada item e multiplica por 100
-        data: data.map((d) => d.retorno_cota_mercado_div * 100),
-        borderColor: "#00b9f2",
-        tension: 0,
-        borderWidth: 3,
-        pointRadius: 0,
-      },
-      {
-        label: "Retorno Cota PL + Div",
-        data: data.map((d) => d.retorno_cota_pl_div * 100),
-        borderColor: "#003b4d",
-        tension: 0.3,
-        borderWidth: 2,
-        pointRadius: 0,
-      },
-      {
-        label: "Retorno Cota Mercado",
-        data: data.map((d) => d.retorno_cota_mercado * 100),
-        borderColor: "#0273c3",
-        tension: 0.3,
-        borderWidth: 2,
-        pointRadius: 0,
-      },
-      {
-        label: "IFIX",
-        // IFIX e CDI já estão na escala correta (ex: 0.86), não multiplicamos.
-        data: data.map((d) => d.ifix),
-        borderColor: "#f59e0b",
-        tension: 0.3,
-        borderWidth: 2,
-        pointRadius: 0,
-      },
-      // {
-      //   label: "IFIX Logístico",
-      //   // Esta coluna não existe nos seus dados de exemplo (dataRaw).
-      //   // Se ela existir nos dados do fetch, pode descomentar.
-      //   // data: data.map((d) => d.ifix_logistico),
-      //   borderColor: "#b45309",
-      //   tension: 0.3,
-      //   borderWidth: 2,
-      //   pointRadius: 0,
-      // },
-      {
-        label: "CDI",
-        data: data.map((d) => d.cdi),
-        borderColor: "#777",
-        borderDash: [5, 5],
-        tension: 0.3,
-        borderWidth: 2,
-        pointRadius: 0,
-      },
-    ];
-
-    // Filtra datasets que porventura não existam nos dados (ex: 'ifix_logistico')
-    const datasetsFiltrados = datasets.filter(
-      (ds) =>
-        ds.data &&
-        ds.data.length > 0 &&
-        ds.data.some((val) => val !== undefined && val !== null)
-    );
-
-    // 🔹 Configuração Chart.js
-    const ctx = document.getElementById("graficoResultados-acumulada");
-    if (!ctx) {
-      console.error(
-        "Elemento do gráfico #graficoResultados-acumulada não encontrado."
-      );
-      return;
-    }
-    const isMobile = window.innerWidth < 768; // Ajuste o breakpoint conforme quiser
-    const legendaFontSize = isMobile ? 8 : 14;
-    if (window.innerWidth < 768) {
-      const chart = new Chart(ctx, {
-        type: "line",
-        data: { labels, datasets: datasetsFiltrados },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: { mode: "index", intersect: false },
-          stacked: false,
-          plugins: {
-            legend: {
-              position: "top",
-              labels: {
-                usePointStyle: true,
-                pointStyle: "line",
-                font: { size: legendaFontSize },
-                generateLabels: function (chart) {
-                  const original =
-                    Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                  // Aplica borda pontilhada apenas ao CDI
-                  return original.map((label) => {
-                    const dataset = chart.data.datasets[label.datasetIndex];
-                    if (dataset.label === "CDI") {
-                      return {
-                        ...label,
-                        strokeStyle: dataset.borderColor,
-                        lineDash: [2, 2], // 👈 torna a legenda pontilhada
-                      };
-                    }
-                    return label;
-                  });
-                },
-              },
-            },
-            tooltip: {
-              callbacks: {
-                label: (ctx) =>
-                  `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`,
-              },
-            },
-
-            // 👇 AQUI ENTRA O PLUGIN DE ZOOM/PAN
-            zoom: {
-              pan: {
-                enabled: true,
-                mode: "x", // permite arrastar horizontalmente
-                threshold: 5, // evita pan acidental com toques leves
-              },
-              zoom: {
-                wheel: { enabled: true }, // sem zoom por scroll
-                pinch: { enabled: true }, // zoom por pinça (dois dedos)
-                mode: "x",
-              },
-              limits: {
-                x: { minRange: 3 }, // impede zoom excessivo
-              },
-            },
-          },
-
-          scales: {
-            y: {
-              ticks: { callback: (v) => `${v.toFixed(1)}%` },
-              title: { display: window.innerWidth >= 768, text: "Retorno (%)" },
-              grid: { color: "rgba(0,0,0,0.05)" },
-            },
-            x: {
-              grid: { display: false },
-            },
-          },
-        },
-      }); // seu gráfico
-      const totalLabels = chart.data.labels.length;
-      const visibleRange = 4; // mostrar só os últimos 6 meses, por exemplo
-      chart.zoomScale("x", {
-        min: totalLabels - visibleRange,
-        max: totalLabels - 1,
-      });
-    } else {
-      new Chart(ctx, {
-        type: "line",
-        data: { labels, datasets: datasetsFiltrados },
-        options: {
-          responsive: true,
-          interaction: { mode: "index", intersect: false },
-          stacked: false,
-          plugins: {
-            legend: {
-              position: "top",
-              labels: {
-                usePointStyle: true,
-                pointStyle: "line",
-                font: { size: legendaFontSize },
-                generateLabels: function (chart) {
-                  const original =
-                    Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                  // Aplica borda pontilhada apenas ao CDI
-                  return original.map((label) => {
-                    const dataset = chart.data.datasets[label.datasetIndex];
-                    if (dataset.label === "CDI") {
-                      return {
-                        ...label,
-                        strokeStyle: dataset.borderColor,
-                        lineDash: [5, 5], // 👈 torna a legenda pontilhada
-                      };
-                    }
-                    return label;
-                  });
-                },
-              },
-            },
-            tooltip: {
-              callbacks: {
-                label: (ctx) =>
-                  `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`,
-              },
-            },
-
-            // 👇 AQUI ENTRA O PLUGIN DE ZOOM/PAN
-            zoom: {
-              pan: {
-                enabled: true,
-                mode: "x", // arrasta apenas no eixo X
-                modifierKey: null, // no mobile não precisa de tecla
-              },
-              zoom: {
-                wheel: { enabled: false }, // desativa zoom por scroll
-                pinch: { enabled: true }, // ativa zoom com dois dedos
-                mode: "x", // zoom apenas horizontal
-              },
-              limits: {
-                x: { minRange: 3 }, // impede zoom exagerado (mínimo de 3 pontos)
-              },
-            },
-          },
-
-          scales: {
-            y: {
-              ticks: { callback: (v) => `${v.toFixed(1)}%` },
-              title: { display: window.innerWidth >= 768, text: "Retorno (%)" },
-              grid: { color: "rgba(0,0,0,0.05)" },
-            },
-            x: {
-              grid: { display: false },
-            },
-          },
-        },
-      });
-    }
-  }
-
-  /**
-   * 1. Função principal para buscar os dados da API.
-   */
-  async function getAcumuladas() {
-    let codigoDoSpan = "";
-    let codigoDaUrl = "";
-
-    const spanFundo = document.querySelector("#codigo-do-fundo span");
-    if (spanFundo) {
-      codigoDoSpan = spanFundo.textContent.trim().toUpperCase();
-    }
-
-    const path = window.location.pathname;
-    const partes = path.split("/").filter(Boolean);
-    const ultimoSegmento = partes[partes.length - 1];
-    if (ultimoSegmento) {
-      codigoDaUrl = ultimoSegmento.trim().toUpperCase();
-    }
-
-    const codigoFundo = codigoDaUrl || codigoDoSpan;
-
-    if (!codigoFundo) {
-      console.error(
-        "Elemento #codigo-do-fundo span não encontrado e URL não contém código de fundo."
-      );
-      return;
-    }
-
-    // CORREÇÃO: A URL precisa estar entre crases (`) ou aspas (")
-    const urlRequestCotacaoFundo = ` https://rbrasset.s3.us-east-1.amazonaws.com/graphics/profitability/${codigoFundo}.json`;
-
-    try {
-      const response = await fetch(urlRequestCotacaoFundo);
-      if (!response.ok) {
-        throw new Error(`Erro ao buscar dados: ${response.statusText}`);
+    /**
+     * 2. Função para criar o gráfico.
+     * Ela recebe um array de dados e usa esse array para montar o gráfico.
+     */
+    function criarGraficoAcumuladas(data) {
+      if (!data || data.length === 0) {
+        console.error("Não há dados para criar o gráfico.");
+        return;
       }
-      const data = await response.json();
 
-      // CORREÇÃO: Chamamos a função de criar o gráfico, passando os dados do fetch
-      criarGraficoAcumuladas(data);
-    } catch (error) {
-      console.error("Falha ao buscar dados da API.", error);
-      const dataRaw = [
+      // 🔹 Extrair labels (meses)
+      // CORREÇÃO: Mapeamos o array 'data' principal, item por item.
+      const labels = data.map((item) => {
+        const [ano, mes] = item.mes.split("-");
+        const dataObj = new Date(ano, mes - 1);
+
+        // --- MÉTODO NOVO E ROBUSTO (Correção) ---
+        // Usamos formatToParts para pegar as partes da data (mês, ano)
+        // de forma segura, independentemente do formato (ex: "dez. de 24" ou "dez. 24")
+        const parts = new Intl.DateTimeFormat("pt-BR", {
+          month: "short",
+          year: "2-digit",
+        }).formatToParts(dataObj);
+
+        // Encontramos os valores específicos de mês e ano
+        // O '?' é opcional, mas garante que não quebre se 'find' falhar
+        const mesValor = parts.find((p) => p.type === "month")?.value;
+        const anoValor = parts.find((p) => p.type === "year")?.value;
+
+        // Juntamos manualmente no formato "mes/ano"
+        return `${mesValor.replace(".", "")}/${anoValor}`;
+        // --- FIM DO MÉTODO NOVO ---
+      });
+
+      // 🔹 Montar datasets dinamicamente
+      // CORREÇÃO: Mapeamos o array 'data' principal para cada série.
+      // CORREÇÃO 2: Multiplicamos os retornos por 100 para normalizar a escala.
+      const datasets = [
         {
-          mes: "2024-07",
-          retorno_cota_mercado_div: 0.0,
-          retorno_cota_pl_div: 0.00986,
-          retorno_cota_pl: 0.0,
-          retorno_cota_mercado: 0.0,
-          ifix: 0.0,
-          cdi: 0.0,
+          label: "Retorno Cota Mercado + Div",
+          // Pega o 'retorno_cota_mercado_div' de cada item e multiplica por 100
+          data: data.map((d) => d.retorno_cota_mercado_div * 100),
+          borderColor: "#00b9f2",
+          tension: 0,
+          borderWidth: 3,
+          pointRadius: 0,
         },
         {
-          mes: "2024-08",
-          retorno_cota_mercado_div: -0.000831,
-          retorno_cota_pl_div: 0.012074,
-          retorno_cota_pl: 0.002888,
-          retorno_cota_mercado: -0.010319917440660409,
-          ifix: 0.86,
-          cdi: 0.87,
+          label: "Retorno Cota PL + Div",
+          data: data.map((d) => d.retorno_cota_pl_div * 100),
+          borderColor: "#003b4d",
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 0,
         },
         {
-          mes: "2024-09",
-          retorno_cota_mercado_div: 0.052253,
-          retorno_cota_pl_div: 0.00891,
-          retorno_cota_pl: -0.000686,
-          retorno_cota_mercado: 0.04275286757038588,
-          ifix: -1.75,
-          cdi: 1.71,
+          label: "Retorno Cota Mercado",
+          data: data.map((d) => d.retorno_cota_mercado * 100),
+          borderColor: "#0273c3",
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 0,
         },
         {
-          mes: "2024-10",
-          retorno_cota_mercado_div: -0.006346,
-          retorno_cota_pl_div: -0.000506,
-          retorno_cota_pl: -0.010201,
-          retorno_cota_mercado: -0.016000000000000014,
-          ifix: -4.75,
-          cdi: 2.65,
+          label: "IFIX",
+          // IFIX e CDI já estão na escala correta (ex: 0.86), não multiplicamos.
+          data: data.map((d) => d.ifix),
+          borderColor: "#f59e0b",
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 0,
         },
+        // {
+        //   label: "IFIX Logístico",
+        //   // Esta coluna não existe nos seus dados de exemplo (dataRaw).
+        //   // Se ela existir nos dados do fetch, pode descomentar.
+        //   // data: data.map((d) => d.ifix_logistico),
+        //   borderColor: "#b45309",
+        //   tension: 0.3,
+        //   borderWidth: 2,
+        //   pointRadius: 0,
+        // },
         {
-          mes: "2024-11",
-          retorno_cota_mercado_div: 0.008648,
-          retorno_cota_pl_div: 0.004525,
-          retorno_cota_pl: -0.005221,
-          retorno_cota_mercado: -0.00101626016260159,
-          ifix: -6.76,
-          cdi: 3.47,
-        },
-        {
-          mes: "2024-12",
-          retorno_cota_mercado_div: -0.193329,
-          retorno_cota_pl_div: -0.000553,
-          retorno_cota_pl: -0.010401,
-          retorno_cota_mercado: -0.20549338758901325,
-          ifix: -7.39,
-          cdi: 4.43,
-        },
-        {
-          mes: "2025-01",
-          retorno_cota_mercado_div: 0.11278,
-          retorno_cota_pl_div: 0.028427,
-          retorno_cota_pl: 0.018246,
-          retorno_cota_mercado: 0.10115236875800249,
-          ifix: -10.23,
-          cdi: 5.49,
-        },
-        {
-          mes: "2025-02",
-          retorno_cota_mercado_div: -0.08708,
-          retorno_cota_pl_div: 0.004363,
-          retorno_cota_pl: -0.005878,
-          retorno_cota_mercado: -0.09999999999999998,
-          ifix: -7.23,
-          cdi: 6.53,
-        },
-        {
-          mes: "2025-03",
-          retorno_cota_mercado_div: 0.04612,
-          retorno_cota_pl_div: 0.046411,
-          retorno_cota_pl: 0.037528,
-          retorno_cota_mercado: 0.0348837209302324,
-          ifix: -1.54,
-          cdi: 7.56,
-        },
-        {
-          mes: "2025-04",
-          retorno_cota_mercado_div: 0.007533,
-          retorno_cota_pl_div: -0.01912,
-          retorno_cota_pl: -0.028261,
-          retorno_cota_mercado: -0.0037453183520598232,
-          ifix: 1.42,
-          cdi: 8.69,
-        },
-        {
-          mes: "2025-05",
-          retorno_cota_mercado_div: 0.0088,
-          retorno_cota_pl_div: 0.012016,
-          retorno_cota_pl: 0.0029,
-          retorno_cota_mercado: -0.0025062656641604564,
-          ifix: 2.89,
-          cdi: 9.93,
-        },
-        {
-          mes: "2025-06",
-          retorno_cota_mercado_div: 0.014417,
-          retorno_cota_pl_div: 0.01628,
-          retorno_cota_pl: 0.006722,
-          retorno_cota_mercado: 0.002512562814070307,
-          ifix: 3.54,
-          cdi: 11.14,
-        },
-        {
-          mes: "2025-07",
-          retorno_cota_mercado_div: 0.002,
-          retorno_cota_pl_div: 0.000458,
-          retorno_cota_pl: -0.009188,
-          retorno_cota_mercado: -0.010025062656641603,
-          ifix: 2.13,
-          cdi: 12.55,
-        },
-        {
-          mes: "2025-08",
-          retorno_cota_mercado_div: 0.112185,
-          retorno_cota_pl_div: 0.025144,
-          retorno_cota_pl: 0.015647,
-          retorno_cota_mercado: 0.10126582278481,
-          ifix: 3.32,
-          cdi: 13.86,
+          label: "CDI",
+          data: data.map((d) => d.cdi),
+          borderColor: "#777",
+          borderDash: [5, 5],
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 0,
         },
       ];
 
-      criarGraficoAcumuladas(dataRaw);
-    }
-  }
+      // Filtra datasets que porventura não existam nos dados (ex: 'ifix_logistico')
+      const datasetsFiltrados = datasets.filter(
+        (ds) =>
+          ds.data &&
+          ds.data.length > 0 &&
+          ds.data.some((val) => val !== undefined && val !== null)
+      );
 
-  // 3. Chamar a função principal para iniciar o processo
-  // É uma boa prática esperar o DOM carregar antes de executar
-  document.addEventListener("DOMContentLoaded", () => {
-    getAcumuladas();
-  });
+      // 🔹 Configuração Chart.js
+      const ctx = document.getElementById("graficoResultados-acumulada");
+      if (!ctx) {
+        console.error(
+          "Elemento do gráfico #graficoResultados-acumulada não encontrado."
+        );
+        return;
+      }
+      const isMobile = window.innerWidth < 768; // Ajuste o breakpoint conforme quiser
+      const legendaFontSize = isMobile ? 10 : 14;
+      if (window.innerWidth < 768) {
+        const chart = new Chart(ctx, {
+          type: "line",
+          data: { labels, datasets: datasetsFiltrados },
+          options: {
+            responsive: true,
+    maintainAspectRatio: false,
+            interaction: { mode: "index", intersect: false },
+            stacked: false,
+            plugins: {
+              legend: {
+                position: "top",
+                labels: {
+                  usePointStyle: true,
+                  pointStyle: "line",
+                  font: { size: legendaFontSize },
+                  generateLabels: function (chart) {
+                    const original =
+                      Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                    // Aplica borda pontilhada apenas ao CDI
+                    return original.map((label) => {
+                      const dataset = chart.data.datasets[label.datasetIndex];
+                      if (dataset.label === "CDI") {
+                        return {
+                          ...label,
+                          strokeStyle: dataset.borderColor,
+                          lineDash: [2, 2], // 👈 torna a legenda pontilhada
+                        };
+                      }
+                      return label;
+                    });
+                  },
+                },
+              },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) =>
+                    `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`,
+                },
+              },
+
+              // 👇 AQUI ENTRA O PLUGIN DE ZOOM/PAN
+              zoom: {
+                pan: {
+                  enabled: true,
+                  mode: "x", // permite arrastar horizontalmente
+                  threshold: 5, // evita pan acidental com toques leves
+                },
+                zoom: {
+                  wheel: { enabled: true }, // sem zoom por scroll
+                  pinch: { enabled: true }, // zoom por pinça (dois dedos)
+                  mode: "x",
+                },
+                limits: {
+                  x: { minRange: 3 }, // impede zoom excessivo
+                },
+              },
+            },
+
+            scales: {
+              y: {
+                ticks: { callback: (v) => `${v.toFixed(1)}%` },
+                title: { display: window.innerWidth >= 768, text: "Retorno (%)" },
+                grid: { color: "rgba(0,0,0,0.05)" },
+              },
+              x: {
+                grid: { display: false },
+              },
+            },
+          },
+        }); // seu gráfico
+        const totalLabels = chart.data.labels.length;
+        const visibleRange = 4; // mostrar só os últimos 6 meses, por exemplo
+        chart.zoomScale("x", {
+          min: totalLabels - visibleRange,
+          max: totalLabels - 1,
+        });
+      } else {
+        new Chart(ctx, {
+          type: "line",
+          data: { labels, datasets: datasetsFiltrados },
+          options: {
+            responsive: true,
+            interaction: { mode: "index", intersect: false },
+            stacked: false,
+            plugins: {
+              legend: {
+                position: "top",
+                labels: {
+                  usePointStyle: true,
+                  pointStyle: "line",
+                  font: { size: legendaFontSize },
+                  generateLabels: function (chart) {
+                    const original =
+                      Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                    // Aplica borda pontilhada apenas ao CDI
+                    return original.map((label) => {
+                      const dataset = chart.data.datasets[label.datasetIndex];
+                      if (dataset.label === "CDI") {
+                        return {
+                          ...label,
+                          strokeStyle: dataset.borderColor,
+                          lineDash: [5, 5], // 👈 torna a legenda pontilhada
+                        };
+                      }
+                      return label;
+                    });
+                  },
+                },
+              },
+              tooltip: {
+                callbacks: {
+                  label: (ctx) =>
+                    `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`,
+                },
+              },
+
+              // 👇 AQUI ENTRA O PLUGIN DE ZOOM/PAN
+              zoom: {
+                pan: {
+                  enabled: true,
+                  mode: "x", // arrasta apenas no eixo X
+                  modifierKey: null, // no mobile não precisa de tecla
+                },
+                zoom: {
+                  wheel: { enabled: false }, // desativa zoom por scroll
+                  pinch: { enabled: true }, // ativa zoom com dois dedos
+                  mode: "x", // zoom apenas horizontal
+                },
+                limits: {
+                  x: { minRange: 3 }, // impede zoom exagerado (mínimo de 3 pontos)
+                },
+              },
+            },
+
+            scales: {
+              y: {
+                ticks: { callback: (v) => `${v.toFixed(1)}%` },
+                title: { display: window.innerWidth >= 768, text: "Retorno (%)" },
+                grid: { color: "rgba(0,0,0,0.05)" },
+              },
+              x: {
+                grid: { display: false },
+              },
+            },
+          },
+        });
+      }
+    }
+
+    /**
+     * 1. Função principal para buscar os dados da API.
+     */
+    async function getAcumuladas() {
+      let codigoDoSpan = "";
+      let codigoDaUrl = "";
+
+      const spanFundo = document.querySelector("#codigo-do-fundo span");
+      if (spanFundo) {
+        codigoDoSpan = spanFundo.textContent.trim().toUpperCase();
+      }
+
+      const path = window.location.pathname;
+      const partes = path.split("/").filter(Boolean);
+      const ultimoSegmento = partes[partes.length - 1];
+      if (ultimoSegmento) {
+        codigoDaUrl = ultimoSegmento.trim().toUpperCase();
+      }
+
+      const codigoFundo = codigoDaUrl || codigoDoSpan;
+
+      if (!codigoFundo) {
+        console.error(
+          "Elemento #codigo-do-fundo span não encontrado e URL não contém código de fundo."
+        );
+        return;
+      }
+
+      // CORREÇÃO: A URL precisa estar entre crases (`) ou aspas (")
+
+
+       let codigoFundoFormatado = codigoFundo.toLowerCase(); // ex: "rbr-fof-imobiliario"
+
+      // URL final
+      let urlRequestCotacaoFundo;
+
+      if (codigoFundoFormatado.includes('fof')) {
+        // pega a posição final de "fof" dinamicamente
+        const indexFof = codigoFundoFormatado.indexOf('fof') + 3;
+
+        // mantém só o que vem antes e incluindo "fof", remove traços
+        const prefixo = codigoFundoFormatado.slice(0, indexFof).replace(/-/g, '');
+
+        // monta URL
+        urlRequestCotacaoFundo = `https://rbrasset.s3.us-east-1.amazonaws.com/datasets/${prefixo}-ifix.json`;
+      } else {
+        // fundos normais
+        urlRequestCotacaoFundo = `https://rbrasset.s3.us-east-1.amazonaws.com/graphics/profitability/${codigoFundo}.json`;
+      }
+
+
+      try {
+        const response = await fetch(urlRequestCotacaoFundo);
+        if (!response.ok) {
+          throw new Error(`Erro ao buscar dados: ${response.statusText}`);
+        }
+        const data = await response.json();
+
+        // CORREÇÃO: Chamamos a função de criar o gráfico, passando os dados do fetch
+        criarGraficoAcumuladas(data);
+      } catch (error) {
+        console.error("Falha ao buscar dados da API.", error);
+        const dataRaw = [
+          {
+            mes: "2024-07",
+            retorno_cota_mercado_div: 0.0,
+            retorno_cota_pl_div: 0.00986,
+            retorno_cota_pl: 0.0,
+            retorno_cota_mercado: 0.0,
+            ifix: 0.0,
+            cdi: 0.0,
+          },
+          {
+            mes: "2024-08",
+            retorno_cota_mercado_div: -0.000831,
+            retorno_cota_pl_div: 0.012074,
+            retorno_cota_pl: 0.002888,
+            retorno_cota_mercado: -0.010319917440660409,
+            ifix: 0.86,
+            cdi: 0.87,
+          },
+          {
+            mes: "2024-09",
+            retorno_cota_mercado_div: 0.052253,
+            retorno_cota_pl_div: 0.00891,
+            retorno_cota_pl: -0.000686,
+            retorno_cota_mercado: 0.04275286757038588,
+            ifix: -1.75,
+            cdi: 1.71,
+          },
+          {
+            mes: "2024-10",
+            retorno_cota_mercado_div: -0.006346,
+            retorno_cota_pl_div: -0.000506,
+            retorno_cota_pl: -0.010201,
+            retorno_cota_mercado: -0.016000000000000014,
+            ifix: -4.75,
+            cdi: 2.65,
+          },
+          {
+            mes: "2024-11",
+            retorno_cota_mercado_div: 0.008648,
+            retorno_cota_pl_div: 0.004525,
+            retorno_cota_pl: -0.005221,
+            retorno_cota_mercado: -0.00101626016260159,
+            ifix: -6.76,
+            cdi: 3.47,
+          },
+          {
+            mes: "2024-12",
+            retorno_cota_mercado_div: -0.193329,
+            retorno_cota_pl_div: -0.000553,
+            retorno_cota_pl: -0.010401,
+            retorno_cota_mercado: -0.20549338758901325,
+            ifix: -7.39,
+            cdi: 4.43,
+          },
+          {
+            mes: "2025-01",
+            retorno_cota_mercado_div: 0.11278,
+            retorno_cota_pl_div: 0.028427,
+            retorno_cota_pl: 0.018246,
+            retorno_cota_mercado: 0.10115236875800249,
+            ifix: -10.23,
+            cdi: 5.49,
+          },
+          {
+            mes: "2025-02",
+            retorno_cota_mercado_div: -0.08708,
+            retorno_cota_pl_div: 0.004363,
+            retorno_cota_pl: -0.005878,
+            retorno_cota_mercado: -0.09999999999999998,
+            ifix: -7.23,
+            cdi: 6.53,
+          },
+          {
+            mes: "2025-03",
+            retorno_cota_mercado_div: 0.04612,
+            retorno_cota_pl_div: 0.046411,
+            retorno_cota_pl: 0.037528,
+            retorno_cota_mercado: 0.0348837209302324,
+            ifix: -1.54,
+            cdi: 7.56,
+          },
+          {
+            mes: "2025-04",
+            retorno_cota_mercado_div: 0.007533,
+            retorno_cota_pl_div: -0.01912,
+            retorno_cota_pl: -0.028261,
+            retorno_cota_mercado: -0.0037453183520598232,
+            ifix: 1.42,
+            cdi: 8.69,
+          },
+          {
+            mes: "2025-05",
+            retorno_cota_mercado_div: 0.0088,
+            retorno_cota_pl_div: 0.012016,
+            retorno_cota_pl: 0.0029,
+            retorno_cota_mercado: -0.0025062656641604564,
+            ifix: 2.89,
+            cdi: 9.93,
+          },
+          {
+            mes: "2025-06",
+            retorno_cota_mercado_div: 0.014417,
+            retorno_cota_pl_div: 0.01628,
+            retorno_cota_pl: 0.006722,
+            retorno_cota_mercado: 0.002512562814070307,
+            ifix: 3.54,
+            cdi: 11.14,
+          },
+          {
+            mes: "2025-07",
+            retorno_cota_mercado_div: 0.002,
+            retorno_cota_pl_div: 0.000458,
+            retorno_cota_pl: -0.009188,
+            retorno_cota_mercado: -0.010025062656641603,
+            ifix: 2.13,
+            cdi: 12.55,
+          },
+          {
+            mes: "2025-08",
+            retorno_cota_mercado_div: 0.112185,
+            retorno_cota_pl_div: 0.025144,
+            retorno_cota_pl: 0.015647,
+            retorno_cota_mercado: 0.10126582278481,
+            ifix: 3.32,
+            cdi: 13.86,
+          },
+        ];
+
+        criarGraficoAcumuladas(dataRaw);
+    }
+    }
+
+    // 3. Chamar a função principal para iniciar o processo
+    // É uma boa prática esperar o DOM carregar antes de executar
+    document.addEventListener("DOMContentLoaded", () => {
+      getAcumuladas();
+    });
 </script>
