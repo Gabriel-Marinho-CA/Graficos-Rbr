@@ -11,6 +11,19 @@
         * {
           font-family: "Open sans", sans-serif;
         }
+        #notaSemHistorico {
+          display: none;
+          position: absolute;
+          color: #f00;
+          font-size: 12px;
+          margin-top: 6px;
+
+          @media (max-width:547px) {
+            width: 100%;
+            text-align: center;
+            font-size: 10px;
+          }
+        }
         #dividendoFundos {
           height: 350px;
         }
@@ -259,6 +272,9 @@
           <button id="aplicarCustom" type="button">Aplicar</button>
         </div>
       </div>
+      <div id="notaSemHistorico">
+        Atenção: não há registros de rendimento anteriores a 5 anos.
+      </div>
 
       <canvas id="dividendoFundos"></canvas>
     </div>
@@ -414,9 +430,9 @@
               offset: 5,
               font: { weight: "bold", size: 12 },
               formatter: (_, context) =>
-                `${parseFloat(yields_d[context.dataIndex])
+                `${parseFloat(yields[context.dataIndex])
                   .toFixed(2)
-                  .replace(",", ".")}%`,
+                  .replace(".", ",")}%`,
             },
           });
         }
@@ -578,6 +594,15 @@
 
         function aplicaFiltro(periodo, de = null, ate = null) {
           let dadosFiltrados = [...dados];
+          
+           const cincoAnosAtras = new Date();
+          cincoAnosAtras.setFullYear(cincoAnosAtras.getFullYear() - 5);
+
+          const temHistorico5Anos = dados.some(d => new Date(d.datForm) <= cincoAnosAtras);
+          const notaDiv = document.getElementById("notaSemHistorico");
+          if (notaDiv) {
+            notaDiv.style.display = temHistorico5Anos ? "none" : "block";
+          }
 
           switch (periodo) {
             case "1M":
@@ -627,12 +652,8 @@
           const dividendosFiltrados = dadosFiltrados.map((d) =>
             parseFloat(d.volume_dividendos_por_cota)
           );
-          const cotaAtual = parseFloat(144.6);
           const yieldsFiltrados = dadosFiltrados.map((d) =>
-            (
-              (parseFloat(d.volume_dividendos_por_cota) / cotaAtual) *
-              100
-            ).toFixed(2)
+            parseFloat(d.yield_mercado).toFixed(2)
           );
 
           if (
@@ -644,7 +665,7 @@
               labelsFiltradas,
               dividendosFiltrados,
               yieldsFiltrados,
-              false
+              true
             );
           } else if (
             window.innerWidth < 1024 &&
@@ -657,7 +678,7 @@
               labelsFiltradas,
               dividendosFiltrados,
               yieldsFiltrados,
-              false
+              true
             );
           } else {
             criaGraficoDividendos(
@@ -673,12 +694,14 @@
         aplicaFiltro("12M");
       }
 
-      function filtraPorMeses(dados, qtdMeses, referenceDate = new Date()) {
-        // usa uma cópia da referenceDate para não mutar o original
-        const ref = new Date(referenceDate.getTime());
-        // subtrai os meses mantendo o dia (comparação por timestamp)
-        ref.setMonth(ref.getMonth() - qtdMeses);
-        return dados.filter((d) => new Date(d.datForm) >= ref);
+      function filtraPorMeses(dados, qtdMeses) {
+        // garante que os dados estão ordenados
+        const ordenados = [...dados].sort(
+          (a, b) => new Date(a.datForm) - new Date(b.datForm)
+        );
+
+        // pega os últimos N registros (ex: últimos 12 meses)
+        return ordenados.slice(-qtdMeses);
       }
 
       function aplicarZoom(fator) {
@@ -750,7 +773,7 @@
       document.addEventListener("DOMContentLoaded", carregaDividendos);
       document
         .getElementById("zoomIn-dividendos")
-        .addEventListener("click", () => aplicarZoom(1.1));
+        .addEventListener("click", () => aplicarZoom(1.3));
       document
         .getElementById("zoomOut-dividendos")
         .addEventListener("click", () => aplicarZoom(0.8));
